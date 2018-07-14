@@ -1,0 +1,111 @@
+---
+title: "Capstone"
+output: word_document
+---
+install.packages("class")
+install.packages("gmodels")
+library(class)
+library(gmodels)
+library(reshape2)
+library(dplyr)
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+Load the data to R
+```{r}
+library(readr)
+shooting_data <- read_csv("D:/datasets/police-KBP-2013-14-15-FULL-DFE.csv")
+```
+
+Look at the data and understand the attributes
+```{r}
+head(shooting_data)
+tail(shooting_data)
+str(shooting_data)
+```
+
+Check the missing values of the "Cause of Death", "State", "Gender", "age", "Race", "Was the deceased armed?" and "Did the deceased have priors?" attributes. 
+```{r}
+sum(is.na(shooting_data$`Cause of Death`) == TRUE)
+length(shooting_data$`Cause of Death`)
+sum(is.na(shooting_data$`State`) == TRUE)
+length(shooting_data$`State`)
+sum(is.na(shooting_data$`Gender`) == TRUE)
+length(shooting_data$`Gender`)
+sum(is.na(shooting_data$`Age`) == TRUE)
+length(shooting_data$`Age`)
+sum(is.na(shooting_data$Race) == T)
+length(shooting_data$Race)
+sum(is.na(shooting_data$`Was the deceased armed?`) == TRUE)
+length(shooting_data$`Was the deceased armed?`)
+sum(is.na(shooting_data$`Did the deceased have priors?`) == TRUE)
+length(shooting_data$`Did the deceased have priors?`)
+```
+
+Replace "Gender" attribute missing value with "Male"
+```{r}
+str(shooting_data$Gender)
+table(shooting_data$Gender, useNA = "always")
+shooting_data$Gender<-replace(shooting_data$Gender,shooting_data$Gender == "", NA)
+shooting_data$Gender[which(is.na(shooting_data$Gender))] = 'Male'
+sum(is.na(shooting_data$Gender))
+```
+
+Replase "Age" attribute missing values with mean age.
+```{r}
+str(shooting_data$Age)
+mean.age<- mean(shooting_data$Age[!is.na(shooting_data$Age)])
+
+mean.age <- round(mean.age, digits = 0)
+mean.age
+shooting_data$Age[is.na(shooting_data$Age)] = mean.age
+sum(is.na(shooting_data$Age))
+```
+
+Replace "Race" attribute missing value with "Unknown"
+```{r}
+str(shooting_data$Race)
+table(shooting_data$Race, useNA = "always")
+shooting_data$Race<-replace(shooting_data$Race,shooting_data$Race == "", NA)
+shooting_data$Race[which(is.na(shooting_data$Race))] = 'Unknown'
+sum(is.na(shooting_data$Race))
+```
+
+Replace "Was the deceased armed?" attribute missing value with "Unknown".
+```{r}
+str(shooting_data$`Was the deceased armed?`)
+table(shooting_data$`Was the deceased armed?`, useNA = "always")
+shooting_data$`Was the deceased armed?`<-replace(shooting_data$`Was the deceased armed?`,shooting_data$`Was the deceased armed?` == "", NA)
+shooting_data$`Was the deceased armed?`[which(is.na(shooting_data$`Was the deceased armed?`))] = 'Unknown'
+sum(is.na(shooting_data$`Was the deceased armed?`))
+```
+
+Replace "Did the deceased have priors?" attribute missing value with "Unclear".
+```{r}
+str(shooting_data$`Did the deceased have priors?`)
+table(shooting_data$`Did the deceased have priors?`, useNA = "always")
+shooting_data$`Did the deceased have priors?`<-replace(shooting_data$`Did the deceased have priors?`,shooting_data$`Did the deceased have priors?` == "", NA)
+shooting_data$`Did the deceased have priors?`[which(is.na(shooting_data$`Did the deceased have priors?`))] = 'Unknown'
+sum(is.na(shooting_data$`Did the deceased have priors?`))
+```
+
+Remove unwanted attributes
+```{r}
+testdata <- shooting_data[c("Cause of Death", "Race", "Was the deceased armed?", "Did the deceased have priors?")]
+str(testdata)
+```
+
+Visualization of key attributes
+```{r}
+hist(shooting_data$Age, breaks = 20)
+#barplot(shooting_data$Age, density = 100)
+barplot(prop.table(table(shooting_data$Race)), las=2)
+```
+
