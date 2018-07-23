@@ -1,9 +1,14 @@
 ---
 title: "Capstone"
-output: word_document
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
 ---
 install.packages("class")
 install.packages("gmodels")
+install.packages("ggplot2")
+library(ggplot2)
 library(class)
 library(gmodels)
 library(reshape2)
@@ -21,7 +26,8 @@ When you click the **Knit** button a document will be generated that includes bo
 Load the data to R
 ```{r}
 library(readr)
-shooting_data <- read_csv("D:/datasets/police-KBP-2013-14-15-FULL-DFE.csv")
+#shooting_data <- read_csv("D:/datasets/police-KBP-2013-14-15-FULL-DFE.csv")
+shooting_data <- read_csv("https://www.figure-eight.com/wp-content/uploads/2016/03/police-KBP-2013-14-15-FULL-DFE.csv")
 ```
 
 Look at the data and understand the attributes
@@ -29,6 +35,7 @@ Look at the data and understand the attributes
 head(shooting_data)
 tail(shooting_data)
 str(shooting_data)
+summary(shooting_data)
 ```
 
 Check the missing values of the "Cause of Death", "State", "Gender", "age", "Race", "Was the deceased armed?" and "Did the deceased have priors?" attributes. 
@@ -98,14 +105,142 @@ sum(is.na(shooting_data$`Did the deceased have priors?`))
 
 Remove unwanted attributes
 ```{r}
-testdata <- shooting_data[c("Cause of Death", "Race", "Was the deceased armed?", "Did the deceased have priors?")]
+testdata <- shooting_data[c("Cause of Death", "State", "Gender", "Age", "Race", "Was the deceased armed?", "Did the deceased have priors?")]
 str(testdata)
+```
+
+Analysis of each attributes and normaliztion
+```{r}
+#Remove all rows that are not shooting death
+#summary(testdata)
+#testdata<-testdata[!(testdata$`Cause of Death`!="Shooting"),]
+#summary(testdata)
+#Cause of Death
+str(testdata$`Cause of Death`)
+testdata$`Cause of Death`<- gsub("car", "Car", testdata$`Cause of Death`)
+testdata$`Cause of Death`<-as.factor(testdata$`Cause of Death`)
+summary(testdata$`Cause of Death`)
+#State
+str(testdata$State)
+testdata$State<-as.factor(testdata$State)
+table(testdata$State)
+#Gender
+str(testdata$Gender)
+testdata$Gender<- gsub("male", "Male", testdata$Gender)
+testdata$Gender<-as.factor(testdata$Gender)
+summary(testdata$Gender)
+#Age
+str(testdata$Age)
+testdata$Age<-as.integer(testdata$Age)
+str(testdata$Age)
+summary(testdata$Age)
+#Race
+str(testdata$Race)
+testdata$Race<-as.factor(testdata$Race)
+summary(testdata$Race)
+str(testdata$Race)
+#Was the deceased armed?
+str(testdata$`Was the deceased armed?`)
+testdata$`Was the deceased armed?`<-as.factor(testdata$`Was the deceased armed?`)
+summary(testdata$`Was the deceased armed?`)
+str(testdata$`Was the deceased armed?`)
+#Did the deceased have priors?
+str(testdata$`Did the deceased have priors?`)
+testdata$`Did the deceased have priors?`<- as.factor(testdata$`Did the deceased have priors?`)
+summary(testdata$`Did the deceased have priors?`)
+str(testdata$`Did the deceased have priors?`)
 ```
 
 Visualization of key attributes
 ```{r}
-hist(shooting_data$Age, breaks = 20)
-#barplot(shooting_data$Age, density = 100)
-barplot(prop.table(table(shooting_data$Race)), las=2)
+#State
+barplot(prop.table(table(testdata$State)), col = "lightblue", las=2)
+#Gender
+barplot(prop.table(table(testdata$Gender)), col = "mistyrose", las=2)
+#Age
+h<-hist(testdata$Age, breaks = 20,  plot = F)
+plot(h, col = heat.colors(length(h$mids))[length(h$count)-rank(h$count)+1], ylim = c(0, max(h$count)+5))
+rug(testdata$Age)
+text(h$mids, h$count, h$count, pos=3)
+#Race
+barplot(prop.table(table(testdata$Race)), las=2)
+#Was the deceased armed?
+barplot(prop.table(table(testdata$`Was the deceased armed?`)), las=2)
+#Did the deceased have priors?
+barplot(prop.table(table(testdata$`Did the deceased have priors?`)), las=2)
+```
+
+
+Armed person is more likly to be shot dead irrespective of their race. Compared to other races unarmed black death percenatge was more.(More analysis needed)
+```{r}
+library(ggplot2)
+table(testdata$Race, testdata$`Was the deceased armed?`)
+ggplot(testdata, aes(x = Race, fill = `Was the deceased armed?`)) + geom_bar(position = "dodge")+theme(axis.text.x = element_text(angle = 90, vjust = 0, hjust = 1))
+```
+
+Compared to whites, other race victims are younger(ignoring "Unknown")
+```{r}
+ggplot(testdata, aes(x = Race, y = Age)) + geom_boxplot()
+```
+
+Police shooting death is high in Florida, Texas and California where as North Dakota had lowest death.
+```{r}
+ggplot(testdata, aes(x = State, fill = Race)) + geom_bar()+theme(axis.text.x = element_text(angle = 90, vjust = 0.25, hjust = 1))
+```
+
+ "Did the deceased have priors" didn't had much difference acrose races.
+ 
+```{r}
+ggplot(testdata, aes(x = Race, fill = `Did the deceased have priors?`)) + geom_bar()+theme(axis.text.x = element_text(angle = 90, vjust = 0.25, hjust = 1))
+```
+
+Even though the mean age for police shooting death accross the state was 36 some states like Hawai, Vermount and Wyoming had higher age spectrum.
+```{r}
+summary(testdata$Age)
+ggplot(testdata, aes(x = State, y = Age)) + geom_boxplot()+theme(axis.text.x = element_text(angle = 90, vjust = 0.25, hjust = 1))
+```
+
+When checking the significance of other variables to Cause of death, only Age, Gender-Male and 'Did the deceased have priors'-Yes has minimum 95% or more significance in the model. It is interesting to know that Armed or not armed and Race was not at all statistically signifiacant variable when it comes to shooting (we only concidering shooting here)
+```{r}
+mylogit <- glm(`Cause of Death`~ Race + Age + Gender+ `Did the deceased have priors?`+ `Was the deceased armed?`, data = testdata, family = "binomial")
+summary(mylogit)
+```
+Insted of using glm() for regression, I try to use maltinom() as some of our factors are having mor than 2 categories, even in this model also the results were similar.
+```{r}
+library (nnet)
+multi<-multinom(`Cause of Death` ~ Race + Age + Gender + `Did the deceased have priors?` + 
+    `Was the deceased armed?`, data = testdata)
+summary(multi)
+#2-tailed Z-Test
+z <- summary(multi)$coefficients/summary(multi)$standard.errors
+p <- (1 - pnorm(abs(z), 0, 1)) * 2
+p
+```
+We should check some of the problematic states with more shooting deaths than any other states like California, Florida and Texas. We will try to do the same test with these staetes.
+
+Checking California
+```{r}
+California<-testdata[(testdata$State=="California"),]
+summary(California)
+mylogit <- glm(`Cause of Death`~ Race + Age + Gender+ `Did the deceased have priors?`+ `Was the deceased armed?`, data = California, family = "binomial")
+summary(mylogit)
+```
+
+Checking Texas
+```{r}
+Texas<-testdata[(testdata$State=="Texas"),]
+summary(Texas)
+mylogit <- glm(`Cause of Death`~ Race + Age + Gender+ `Did the deceased have priors?`+ `Was the deceased armed?`, data = Texas, family = "binomial")
+summary(mylogit)
+```
+
+```{r}
+multi<-multinom(`Cause of Death` ~ Race + Age + Gender + `Did the deceased have priors?` + 
+    `Was the deceased armed?`, data = California)
+summary(multi)
+#2-tailed Z-Test
+z <- summary(multi)$coefficients/summary(multi)$standard.errors
+p <- (1 - pnorm(abs(z), 0, 1)) * 2
+p
 ```
 
