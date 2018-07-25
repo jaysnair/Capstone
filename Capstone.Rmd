@@ -111,15 +111,16 @@ str(testdata)
 
 Analysis of each attributes and normaliztion
 ```{r}
-#Remove all rows that are not shooting death
-#summary(testdata)
-#testdata<-testdata[!(testdata$`Cause of Death`!="Shooting"),]
-#summary(testdata)
+#Remove Car Accident and Other from Cause of Death.
+summary(testdata$`Cause of Death`)
+testdata$`Cause of Death`<- gsub("car", "Car", testdata$`Cause of Death`)
+testdata<-testdata[!(testdata$`Cause of Death`=="Car Accident" | testdata$`Cause of Death`=="Other"),]
+summary(testdata$`Cause of Death`)
 #Cause of Death
 str(testdata$`Cause of Death`)
-testdata$`Cause of Death`<- gsub("car", "Car", testdata$`Cause of Death`)
 testdata$`Cause of Death`<-as.factor(testdata$`Cause of Death`)
 summary(testdata$`Cause of Death`)
+
 #State
 str(testdata$State)
 testdata$State<-as.factor(testdata$State)
@@ -200,11 +201,35 @@ summary(testdata$Age)
 ggplot(testdata, aes(x = State, y = Age)) + geom_boxplot()+theme(axis.text.x = element_text(angle = 90, vjust = 0.25, hjust = 1))
 ```
 
+Splitting data for training and testing
+```{r}
+mydata<-sample(1:nrow(testdata), 0.7*nrow(testdata))
+train.data<-testdata[mydata,]
+testing<-testdata[-mydata,]
+```
+
 When checking the significance of other variables to Cause of death, only Age, Gender-Male and 'Did the deceased have priors'-Yes has minimum 95% or more significance in the model. It is interesting to know that Armed or not armed and Race was not at all statistically signifiacant variable when it comes to shooting (we only concidering shooting here)
 ```{r}
-mylogit <- glm(`Cause of Death`~ Race + Age + Gender+ `Did the deceased have priors?`+ `Was the deceased armed?`, data = testdata, family = "binomial")
+mylogit <- glm(`Cause of Death`~  Gender + Age + Race + `Was the deceased armed?` + `Did the deceased have priors?`, family = binomial(link = "logit"), data = train.data)
 summary(mylogit)
+
 ```
+Predict using the model and testing data
+```{r}
+newdata<-subset(testing, select = c(3,4,5,6,7))
+prediction<-predict(mylogit, newdata, type= "response")
+prediction<-ifelse(prediction > 0.5,1,0)
+misclasserror<-mean(prediction != testing$`Cause of Death`)
+print(paste("Accuracy", 1-misclasserror))
+```
+Decision Tree model
+```{r}
+mytree <- ctree(`Cause of Death`~  Gender + Age + Race + `Was the deceased armed?` + `Did the deceased have priors?`, data = train.data)
+prediction<-predict(mytree, testing)
+table(prediction, testing$`Cause of Death`)
+```
+
+
 Insted of using glm() for regression, I try to use maltinom() as some of our factors are having mor than 2 categories, even in this model also the results were similar.
 ```{r}
 library (nnet)
