@@ -40,18 +40,25 @@ summary(shooting_data)
 
 Check the missing values of the "Cause of Death", "State", "Gender", "age", "Race", "Was the deceased armed?" and "Did the deceased have priors?" attributes. 
 ```{r}
+print("Cause of Death")
 sum(is.na(shooting_data$`Cause of Death`) == TRUE)
 length(shooting_data$`Cause of Death`)
+print("State")
 sum(is.na(shooting_data$`State`) == TRUE)
 length(shooting_data$`State`)
+print("Gender")
 sum(is.na(shooting_data$`Gender`) == TRUE)
 length(shooting_data$`Gender`)
+print("Age")
 sum(is.na(shooting_data$`Age`) == TRUE)
 length(shooting_data$`Age`)
+print("Race")
 sum(is.na(shooting_data$Race) == T)
 length(shooting_data$Race)
+print("Was the deceased armed")
 sum(is.na(shooting_data$`Was the deceased armed?`) == TRUE)
 length(shooting_data$`Was the deceased armed?`)
+print("Did the deceased hace priors?")
 sum(is.na(shooting_data$`Did the deceased have priors?`) == TRUE)
 length(shooting_data$`Did the deceased have priors?`)
 ```
@@ -90,6 +97,7 @@ Replace "Was the deceased armed?" attribute missing value with "Unknown".
 str(shooting_data$`Was the deceased armed?`)
 table(shooting_data$`Was the deceased armed?`, useNA = "always")
 shooting_data$`Was the deceased armed?`<-replace(shooting_data$`Was the deceased armed?`,shooting_data$`Was the deceased armed?` == "", NA)
+
 shooting_data$`Was the deceased armed?`[which(is.na(shooting_data$`Was the deceased armed?`))] = 'Unknown'
 sum(is.na(shooting_data$`Was the deceased armed?`))
 ```
@@ -99,7 +107,7 @@ Replace "Did the deceased have priors?" attribute missing value with "Unclear".
 str(shooting_data$`Did the deceased have priors?`)
 table(shooting_data$`Did the deceased have priors?`, useNA = "always")
 shooting_data$`Did the deceased have priors?`<-replace(shooting_data$`Did the deceased have priors?`,shooting_data$`Did the deceased have priors?` == "", NA)
-shooting_data$`Did the deceased have priors?`[which(is.na(shooting_data$`Did the deceased have priors?`))] = 'Unknown'
+shooting_data$`Did the deceased have priors?`[which(is.na(shooting_data$`Did the deceased have priors?`))] = 'Unclear'
 sum(is.na(shooting_data$`Did the deceased have priors?`))
 ```
 
@@ -111,10 +119,12 @@ str(testdata)
 
 Analysis of each attributes and dimentionality reduction
 ```{r}
-#Remove Car Accident and Other from Cause of Death.
+#Changing Car Accident,Physical Confrontation, and Taser Gun to Other from Cause of Death.
 summary(testdata$`Cause of Death`)
 testdata$`Cause of Death`<- gsub("car", "Car", testdata$`Cause of Death`)
-testdata<-testdata[!(testdata$`Cause of Death`=="Car Accident" | testdata$`Cause of Death`=="Other"),]
+testdata$`Cause of Death`<- gsub("Car Accident", "Other", testdata$`Cause of Death`)
+testdata$`Cause of Death`<- gsub("Physical Confrontation", "Other", testdata$`Cause of Death`)
+testdata$`Cause of Death`<- gsub("Taser Gun", "Other", testdata$`Cause of Death`)
 summary(testdata$`Cause of Death`)
 
 #Cause of Death
@@ -139,9 +149,11 @@ str(testdata$Age)
 summary(testdata$Age)
 #Race
 
-#Remove "Other" and "Pacific Islander" from Race.
+#Changing "Asian", "Pacific Islander" and "Native American" to "Other" from Race.
 summary(testdata$Race)
-testdata<-testdata[!(testdata$Race=="Other" | testdata$Race=="Pacific Islander"),]
+testdata$Race<-gsub("Pacific Islander", "Other", testdata$Race)
+testdata$Race<-gsub("Asian", "Other", testdata$Race)
+testdata$Race<-gsub("Native American", "Other", testdata$Race)
 summary(testdata$Race)
 
 str(testdata$Race)
@@ -157,7 +169,7 @@ summary(testdata$`Was the deceased armed?`)
 str(testdata$`Was the deceased armed?`)
 #Did the deceased have priors?
 str(testdata$`Did the deceased have priors?`)
-testdata$`Did the deceased have priors?`<- gsub("Unknown", "Unclear", testdata$`Did the deceased have priors?`)
+#testdata$`Did the deceased have priors?`<- gsub("Unknown", "Unclear", testdata$`Did the deceased have priors?`)
 testdata$`Did the deceased have priors?`<- as.factor(testdata$`Did the deceased have priors?`)
 summary(testdata$`Did the deceased have priors?`)
 str(testdata$`Did the deceased have priors?`)
@@ -190,7 +202,7 @@ table(testdata$Race, testdata$`Was the deceased armed?`)
 ggplot(testdata, aes(x = Race, fill = `Was the deceased armed?`)) + geom_bar(position = "dodge")+theme(axis.text.x = element_text(angle = 90, vjust = 0, hjust = 1))
 ```
 
-Compared to whites, other race victims are younger(ignoring "Unknown")
+Compared to whites, Black and Latino race victims are younger(ignoring "Unknown"), Both of them the mean age is 30 years.
 ```{r}
 ggplot(testdata, aes(x = Race, y = Age)) + geom_boxplot()
 ```
@@ -206,7 +218,7 @@ ggplot(testdata, aes(x = State, fill = Race)) + geom_bar()+theme(axis.text.x = e
 ggplot(testdata, aes(x = Race, fill = `Did the deceased have priors?`)) + geom_bar()+theme(axis.text.x = element_text(angle = 90, vjust = 0.25, hjust = 1))
 ```
 
-Even though the mean age for police shooting death accross the state was 36 some states like Hawai, Vermount and Wyoming had higher age spectrum.
+Even though the mean age for police shooting death accross the state(All race) was 36 some states like Hawai, Vermount and Wyoming had higher age spectrum and DC, Idaho and South decota beeing younger group. Minnesota has wider range in terms of age.
 ```{r}
 summary(testdata$Age)
 ggplot(testdata, aes(x = State, y = Age)) + geom_boxplot()+theme(axis.text.x = element_text(angle = 90, vjust = 0.25, hjust = 1))
@@ -215,54 +227,116 @@ ggplot(testdata, aes(x = State, y = Age)) + geom_boxplot()+theme(axis.text.x = e
 Splitting data for training and testing
 ```{r}
 
-mydata<-sample(1:nrow(testdata), 0.7*nrow(testdata))
+mydata<-sample(1:nrow(testdata), size=0.7*nrow(testdata))
 train.data<-testdata[mydata,]
 testing<-testdata[-mydata,]
 ```
 
-When checking the significance of other variables to Cause of death, only Age, Gender-Male and 'Did the deceased have priors'-Yes has minimum 95% or more significance in the model. It is interesting to know that Armed or not armed and Race was not at all statistically signifiacant variable when it comes to shooting (we only concidering shooting here)
+When checking the significance of other variables to Cause of death, only Age, 'Was the deceased armed'-Yes has minimum 95% or more significance in the model. It is interesting to know that Race priors was not at all statistically signifiacant variable when it comes to shooting (we only concidering shooting here)
 ```{r}
-#library(caret)
-echo = FALSE
-contro_l<- trainControl(method = "repeatedcv", repeats = 5, number = 10, verboseIter = TRUE)
-predictor<-c("Gender", "Age", "Race", "`Was the deceased armed?`",  "`Did the deceased have priors?`")
-formul_a<-as.formula(paste("`Cause of Death`", paste(predictor, collapse = "+"),sep = "~"))
-mylogit = train(formul_a, data=train.data, method="multinom", family=binomial, trControl=contro_l, metric = "Accuracy")
-#mylogit <- glm(`Cause of Death`~  Gender + Age + Race + `Was the deceased armed?` + `Did the deceased have priors?`, family = binomial(link = "logit"), data = train.data)
+library(caret)
+#contro_l<- trainControl(method = "repeatedcv", repeats = 5, number = 10, verboseIter = FALSE)
+#predictor<-c("Gender", "Age", "Race", "`Was the deceased armed?`",  "`Did the deceased have priors?`")
+#formul_a<-as.formula(paste("`Cause of Death`", paste(predictor, collapse = "+"),sep = "~"))
+#mylogit = train(formul_a, data=train.data, method="glm", family=binomial, trControl=contro_l, metric = "Accuracy")
+
+mylogit <- glm(`Cause of Death`~  Gender + Age + Race + `Was the deceased armed?` + `Did the deceased have priors?`, family = binomial, data = train.data)
 summary(mylogit)
-print("Accuracy")
-mylogit$results$Accuracy
+
+#mylogit1 <- glm(`Cause of Death`~  Gender + Age + Race + `Was the deceased armed?`, family = binomial(link = "logit"), data = train.data)
+
+summary(mylogit)
+
+mylogit
+
+#2-tailed Z-Test
+#z <- summary(mylogit)$coefficients/summary(mylogit)$standard.errors
+#p <- (1 - pnorm(abs(z), 0, 1)) * 2
+#p
 ```
-Predict using the model and testing data
+
+Testing and validating the model
 ```{r}
-newdata<-subset(testing, select = c(3,4,5,6,7))
-prediction<-predict(mylogit, newdata)
-prediction<-ifelse(prediction > 0.5,1,0)
-misclasserror<-mean(testing$`Cause of Death`!= prediction)
+##--- Prediction and Misclassification for Testing Data 
+predicted_values <- predict(mylogit, testing, type = "response")
+table(testing$`Cause of Death`)
+nrows_predict<-nrow(testing)
+prediction_test <- data.frame(c(1:nrows_predict))
+
+colnames(prediction_test) <- c("Cause")
+str(prediction_test)
+prediction_test$Cause <- as.character(prediction_test$Cause)
+prediction_test$Cause <- "1"
+summary(prediction_test)
+
+prediction_test$Cause[predicted_values < 0.5] <- "0"
+#prediction [predicted_values > 0.5] <- "TRUE"
+
+#prediction_test$Cause <- ifelse(prediction_test$Cause=="1", "Shooting", "Other")
+prediction_test$Cause <- as.factor(prediction_test$Cause)
+
+nrows_test <- nrow(testing) 
+testing_test<- data.frame(c(1:nrows_test))
+colnames(testing_test)<- c("Cause of Death")
+testing_test$`Cause of Death` <- testing$`Cause of Death`
+testing_test$`Cause of Death` <- ifelse(testing_test$`Cause of Death`== "Shooting", 1, 0)
+testing_test$`Cause of Death` <- as.factor(testing_test$`Cause of Death`)
+#Confusion Matrix
+p_tab_test<- table(prediction_test$Cause, testing_test$`Cause of Death`)
+
+tab_test <-confusionMatrix(prediction_test$Cause, testing_test$`Cause of Death`)
+tab_test
+
+misclasserror<-mean(testing_test$`Cause of Death`!= prediction_test$Cause)
+misclasserror
 print(paste("Accuracy", 1-misclasserror))
+
 ```
 
 
+ROC Curve
 ```{r}
-prediction<-predict(mylogit, newdata = testing, type = "response")
+library(ROCR)
+hist_train <- predict(mylogit, train.data, type="response")
+hist_test <- predict(mylogit, testing, type="response")
+hist(hist_train)
+hist(hist_test)
+#ROC Curve
+
+
+p <- predict(mylogit,train.data,type="response")
+pred <- prediction(p, train.data$`Cause of Death`)
+roc <-performance(pred,"tpr","fpr")
+plot(roc, colorize=T, main="ROC Curve", xlab="Specificty", ylab = "Sensitivity")
+# make a line
+abline(a=0,b=1)
+
+```
+
+
+We can further evaluate the statistical significance of each variable in the model through Wald test. Null hpothesishere will be that the coefficient of an independent variable in the model is significantly different from zero. If the P-value is less than 0.05 we can reject H0 thus it will be significant.
+Only "Age and `Was the deceased armed?`" pass the test. If we remove other variables from the model will not substantially harm the fit of the model.
+```{r}
+library(survey)
+
+regTermTest(mylogit, "Gender")
+
+regTermTest(mylogit, "Age")
+
+regTermTest(mylogit, "Race")
+
+regTermTest(mylogit, "`Was the deceased armed?`")
+
+regTermTest(mylogit, "`Did the deceased have priors?`")
 ```
 
 
 Decision Tree model
 ```{r}
-mytree <- ctree(`Cause of Death`~  Gender + Age + Race + `Was the deceased armed?` + `Did the deceased have priors?`, data = train.data)
-#table(predict(mytree, newdata = testing), testing$`Cause of Death`)
-prediction<-predict(mytree, testing)
-#newtest<-cbind(testing, predict(mytree, newdata = testing))
-table(prediction, testing$`Cause of Death`)
-```
-
-
-```{r}
 library(rpart)
-mytree<-rpart(`Cause of Death`~  Gender + Age + Race + `Was the deceased armed?` + `Did the deceased have priors?`, method="class", control=rpart.control(minsplit=5, cp=0), data=train.data)
+mytree<-rpart(`Cause of Death`~  Gender + Age + Race + `Was the deceased armed?` + `Did the deceased have priors?`, method="class", control=rpart.control(minsplit=10, cp=0), data=train.data)
 
-prediction<-predict(mytree, type="class")
+prediction<-predict(mytree, train.data, type="class")
 
 confu_matrix<-table(prediction,train.data$`Cause of Death`)
 cat("Confusion Matrix:")
@@ -271,13 +345,15 @@ confu_matrix
 accuracy<-(confu_matrix[1,1]+confu_matrix[2,2])/(sum(confu_matrix))
 cat("Accuracy of the Model:")
 accuracy
+
+fancyRpartPlot(mytree)
 ```
 
 
 ```{r}
-#library(rattle)
-#library(rpart.plot)
-#library(RColorBrewer)
+library(rattle)
+library(rpart.plot)
+library(RColorBrewer)
 #fancyRpartPlot(mytree)
 
 mytree1<-rpart(`Cause of Death`~  Gender + Age + Race + `Was the deceased armed?` + `Did the deceased have priors?`, method="class", data=train.data, control=rpart.control(minsplit=10, cp=0))
@@ -295,26 +371,34 @@ accuracy
 fancyRpartPlot(mytree1)
 ```
 
-Insted of using glm() for regression, I try to use maltinom() as some of our factors are having mor than 2 categories, even in this model also the results were similar.
-```{r}
-library (nnet)
-multi<-multinom(`Cause of Death` ~ Race + Age + Gender + `Did the deceased have priors?` + 
-    `Was the deceased armed?`, data = testdata)
-summary(multi)
-#2-tailed Z-Test
-z <- summary(multi)$coefficients/summary(multi)$standard.errors
-p <- (1 - pnorm(abs(z), 0, 1)) * 2
-p
-```
+
 We should check some of the problematic states with more shooting deaths than any other states like California, Florida and Texas. We will try to do the same test with these staetes.
 
 Checking California
 ```{r}
 California<-testdata[(testdata$State=="California"),]
 summary(California)
-mylogit <- glm(`Cause of Death`~ Race + Age + Gender+ `Did the deceased have priors?`+ `Was the deceased armed?`, data = California, family = "binomial")
-summary(mylogit)
+mylogit1 <- glm(`Cause of Death`~ Race + Age + Gender+ `Did the deceased have priors?`+ `Was the deceased armed?`, data = California, family = "binomial")
+summary(mylogit1)
 ```
+
+
+```{r}
+mytree1<-rpart(`Cause of Death`~  Gender + Age + Race + `Was the deceased armed?` + `Did the deceased have priors?`, method="class", data=California, control=rpart.control(minsplit=10, cp=0))
+
+Prediction1 <- predict(mytree1, type = "class")
+
+confu_matrix1<-table(Prediction1,California$`Cause of Death`)
+cat("Confusion Matrix:")
+confu_matrix1
+
+accuracy1<-(confu_matrix1[1,1]+confu_matrix1[2,2])/(sum(confu_matrix1))
+cat("Accuracy of the Model:")
+accuracy
+
+fancyRpartPlot(mytree1)
+```
+
 
 Checking Texas
 ```{r}
@@ -324,13 +408,14 @@ mylogit <- glm(`Cause of Death`~ Race + Age + Gender+ `Did the deceased have pri
 summary(mylogit)
 ```
 
+
 ```{r}
-multi<-multinom(`Cause of Death` ~ Race + Age + Gender + `Did the deceased have priors?` + 
-    `Was the deceased armed?`, data = California)
-summary(multi)
-#2-tailed Z-Test
-z <- summary(multi)$coefficients/summary(multi)$standard.errors
-p <- (1 - pnorm(abs(z), 0, 1)) * 2
-p
+library(clustMixType)
+x<- data.frame(testdata$`Cause of Death`,testdata$Age)
+kpres <- kproto(x, 7)
+kpres
+clprofiles(kpres,x)
+#ggplot(kpres$cluster)
+#testdata$cluster = kpres$cluster
 ```
 
