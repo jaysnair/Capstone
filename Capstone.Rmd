@@ -1,9 +1,8 @@
 ---
 title: "Capstone"
+Jayaprakash Nair
 output:
   word_document: default
-  pdf_document: default
-  html_document: default
 ---
 install.packages("class")
 install.packages("gmodels")
@@ -23,14 +22,16 @@ This is an R Markdown document. Markdown is a simple formatting syntax for autho
 
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
-Load the data to R
+1. Data preperation
+
+1.1 Load the data to R
 ```{r}
 library(readr)
 #shooting_data <- read_csv("D:/datasets/police-KBP-2013-14-15-FULL-DFE.csv")
 shooting_data <- read_csv("https://www.figure-eight.com/wp-content/uploads/2016/03/police-KBP-2013-14-15-FULL-DFE.csv")
 ```
 
-Look at the data and understand the attributes
+1.2 Look at the data and understand the attributes
 ```{r}
 head(shooting_data)
 tail(shooting_data)
@@ -38,7 +39,7 @@ str(shooting_data)
 summary(shooting_data)
 ```
 
-Check the missing values of the "Cause of Death", "State", "Gender", "age", "Race", "Was the deceased armed?" and "Did the deceased have priors?" attributes. 
+ 1.3 Check the missing values of the "Cause of Death", "State", "Gender", "age", "Race", "Was the deceased armed?" and "Did the deceased have priors?" attributes. 
 ```{r}
 print("Cause of Death")
 sum(is.na(shooting_data$`Cause of Death`) == TRUE)
@@ -63,7 +64,7 @@ sum(is.na(shooting_data$`Did the deceased have priors?`) == TRUE)
 length(shooting_data$`Did the deceased have priors?`)
 ```
 
-Replace "Gender" attribute missing value with "Male"
+1.4 Replace "Gender" attribute missing value with "Male"
 ```{r}
 str(shooting_data$Gender)
 table(shooting_data$Gender, useNA = "always")
@@ -72,7 +73,7 @@ shooting_data$Gender[which(is.na(shooting_data$Gender))] = 'Male'
 sum(is.na(shooting_data$Gender))
 ```
 
-Replase "Age" attribute missing values with mean age.
+1.5 Replace "Age" attribute missing values with mean age.
 ```{r}
 str(shooting_data$Age)
 mean.age<- mean(shooting_data$Age[!is.na(shooting_data$Age)])
@@ -83,7 +84,7 @@ shooting_data$Age[is.na(shooting_data$Age)] = mean.age
 sum(is.na(shooting_data$Age))
 ```
 
-Replace "Race" attribute missing value with "Unknown"
+1.6 Replace "Race" attribute missing value with "Unknown"
 ```{r}
 str(shooting_data$Race)
 table(shooting_data$Race, useNA = "always")
@@ -92,7 +93,7 @@ shooting_data$Race[which(is.na(shooting_data$Race))] = 'Unknown'
 sum(is.na(shooting_data$Race))
 ```
 
-Replace "Was the deceased armed?" attribute missing value with "Unknown".
+1.7 Replace "Was the deceased armed?" attribute missing value with "Unknown".
 ```{r}
 str(shooting_data$`Was the deceased armed?`)
 table(shooting_data$`Was the deceased armed?`, useNA = "always")
@@ -102,7 +103,7 @@ shooting_data$`Was the deceased armed?`[which(is.na(shooting_data$`Was the decea
 sum(is.na(shooting_data$`Was the deceased armed?`))
 ```
 
-Replace "Did the deceased have priors?" attribute missing value with "Unclear".
+1.8 Replace "Did the deceased have priors?" attribute missing value with "Unclear".
 ```{r}
 str(shooting_data$`Did the deceased have priors?`)
 table(shooting_data$`Did the deceased have priors?`, useNA = "always")
@@ -111,13 +112,16 @@ shooting_data$`Did the deceased have priors?`[which(is.na(shooting_data$`Did the
 sum(is.na(shooting_data$`Did the deceased have priors?`))
 ```
 
-Remove unwanted attributes
+2. Data analysis, visualization and dimensionality reduction.
+
+2.1 Remove unwanted attributes
 ```{r}
 testdata <- shooting_data[c("Cause of Death", "State", "Gender", "Age", "Race", "Was the deceased armed?", "Did the deceased have priors?")]
 str(testdata)
 ```
 
-Analysis of each attributes and dimentionality reduction
+
+2.2 Analysis of each attributes and further dimensionality reduction
 ```{r}
 #Changing Car Accident,Physical Confrontation, and Taser Gun to Other from Cause of Death.
 summary(testdata$`Cause of Death`)
@@ -175,7 +179,7 @@ summary(testdata$`Did the deceased have priors?`)
 str(testdata$`Did the deceased have priors?`)
 ```
 
-Visualization of key attributes
+2.3 Visualization of key attributes
 ```{r}
 #State
 barplot(prop.table(table(testdata$State)), col = "lightblue", las=2)
@@ -194,37 +198,40 @@ barplot(prop.table(table(testdata$`Was the deceased armed?`)), las=2)
 barplot(prop.table(table(testdata$`Did the deceased have priors?`)), las=2)
 ```
 
+3. Trying different approaches
 
-Armed person is more likly to be shot dead irrespective of their race. Compared to other races unarmed black death percenatge was more.(More analysis needed)
+3.1 Tried various plotting methods with some variables to get some insights
+
+3.1.1 Armed person is more likly to be killed irrespective of their race. Compared to other races unarmed black death percenatge appeared to be more.(More analysis needed)
 ```{r}
 library(ggplot2)
 table(testdata$Race, testdata$`Was the deceased armed?`)
 ggplot(testdata, aes(x = Race, fill = `Was the deceased armed?`)) + geom_bar(position = "dodge")+theme(axis.text.x = element_text(angle = 90, vjust = 0, hjust = 1))
 ```
 
-Compared to whites, Black and Latino race victims are younger(ignoring "Unknown"), Both of them the mean age is 30 years.
+3.1.2 Compared to whites, Black and Latino race victims are younger(ignoring "Unknown"), Both of them the mean age is 30 years.
 ```{r}
 ggplot(testdata, aes(x = Race, y = Age)) + geom_boxplot()
 ```
 
-Police shooting death is high in Florida, Texas and California where as North Dakota had lowest death.
+3.1.3 Police shooting death is high in Florida, Texas and California where as North Dakota and Vermount had lowest death.
 ```{r}
 ggplot(testdata, aes(x = State, fill = Race)) + geom_bar()+theme(axis.text.x = element_text(angle = 90, vjust = 0.25, hjust = 1))
 ```
 
- "Did the deceased have priors" didn't had much difference acrose races.
+3.1.4 "Did the deceased have priors" didn't had much difference acrose races.
  
 ```{r}
 ggplot(testdata, aes(x = Race, fill = `Did the deceased have priors?`)) + geom_bar()+theme(axis.text.x = element_text(angle = 90, vjust = 0.25, hjust = 1))
 ```
 
-Even though the mean age for police shooting death accross the state(All race) was 36 some states like Hawai, Vermount and Wyoming had higher age spectrum and DC, Idaho and South decota beeing younger group. Minnesota has wider range in terms of age.
+3.1.5 Even though the mean age for police shooting death accross the state(All race) was 36 some states like Hawai, Vermount and Wyoming had higher age spectrum and DC, Idaho and South decota beeing younger group. Minnesota has wider range in terms of age.
 ```{r}
 summary(testdata$Age)
 ggplot(testdata, aes(x = State, y = Age)) + geom_boxplot()+theme(axis.text.x = element_text(angle = 90, vjust = 0.25, hjust = 1))
 ```
 
-Splitting data for training and testing
+3.2 Splitting data for training and testing
 ```{r}
 
 mydata<-sample(1:nrow(testdata), size=0.7*nrow(testdata))
@@ -232,7 +239,10 @@ train.data<-testdata[mydata,]
 testing<-testdata[-mydata,]
 ```
 
-When checking the significance of other variables to Cause of death, only Age, 'Was the deceased armed'-Yes has minimum 95% or more significance in the model. It is interesting to know that Race priors was not at all statistically signifiacant variable when it comes to shooting (we only concidering shooting here)
+3.3 Applying logistic regression
+
+3.3.1 When checking the significance of other variables to Cause of death, only Age, 'Was the deceased armed'-Yes has minimum 95% or more significance in the model. It is interesting to know that Race and priors was not at all statistically signifiacant variable when it comes to shooting (we only concidering shooting here)
+Race - unknown and ..armed - unclear also showing significance here, we will do further analyses.
 ```{r}
 library(caret)
 #contro_l<- trainControl(method = "repeatedcv", repeats = 5, number = 10, verboseIter = FALSE)
@@ -255,7 +265,7 @@ mylogit
 #p
 ```
 
-Testing and validating the model
+3.3.2 Testing and validating the model
 ```{r}
 ##--- Prediction and Misclassification for Testing Data 
 predicted_values <- predict(mylogit, testing, type = "response")
@@ -294,7 +304,7 @@ print(paste("Accuracy", 1-misclasserror))
 ```
 
 
-ROC Curve
+3.3.3 ROC Curve (validating the model)
 ```{r}
 library(ROCR)
 hist_train <- predict(mylogit, train.data, type="response")
@@ -313,8 +323,9 @@ abline(a=0,b=1)
 
 ```
 
+3.4 Evaluating statistical significance using Wald test
 
-We can further evaluate the statistical significance of each variable in the model through Wald test. Null hpothesishere will be that the coefficient of an independent variable in the model is significantly different from zero. If the P-value is less than 0.05 we can reject H0 thus it will be significant.
+3.4.1 We can further evaluate the statistical significance of each variable in the model through Wald test. Null hpothesishere will be that the coefficient of an independent variable in the model is significantly different from zero. If the P-value is less than 0.05 we can reject H0 thus it will be significant.
 Only "Age and `Was the deceased armed?`" pass the test. If we remove other variables from the model will not substantially harm the fit of the model.
 ```{r}
 library(survey)
@@ -331,9 +342,13 @@ regTermTest(mylogit, "`Did the deceased have priors?`")
 ```
 
 
-Decision Tree model
+3.5 Decision Tree model (checking for alternative models)
+3.5.1 creating model
 ```{r}
 library(rpart)
+library(rattle)
+library(rpart.plot)
+library(RColorBrewer)
 mytree<-rpart(`Cause of Death`~  Gender + Age + Race + `Was the deceased armed?` + `Did the deceased have priors?`, method="class", control=rpart.control(minsplit=10, cp=0), data=train.data)
 
 prediction<-predict(mytree, train.data, type="class")
@@ -349,11 +364,8 @@ accuracy
 fancyRpartPlot(mytree)
 ```
 
-
+3.5.2 Decision Tree testing
 ```{r}
-library(rattle)
-library(rpart.plot)
-library(RColorBrewer)
 #fancyRpartPlot(mytree)
 
 mytree1<-rpart(`Cause of Death`~  Gender + Age + Race + `Was the deceased armed?` + `Did the deceased have priors?`, method="class", data=train.data, control=rpart.control(minsplit=10, cp=0))
@@ -372,35 +384,20 @@ fancyRpartPlot(mytree1)
 ```
 
 
+3.6 Using the regression model on some states
 We should check some of the problematic states with more shooting deaths than any other states like California, Florida and Texas. We will try to do the same test with these staetes.
 
-Checking California
+3.6.1 Checking California
 ```{r}
 California<-testdata[(testdata$State=="California"),]
 summary(California)
-mylogit1 <- glm(`Cause of Death`~ Race + Age + Gender+ `Did the deceased have priors?`+ `Was the deceased armed?`, data = California, family = "binomial")
-summary(mylogit1)
+mylogit2 <- glm(`Cause of Death`~ Race + Age + Gender+ `Did the deceased have priors?`+ `Was the deceased armed?`, data = California, family = "binomial")
+summary(mylogit2)
 ```
 
 
-```{r}
-mytree1<-rpart(`Cause of Death`~  Gender + Age + Race + `Was the deceased armed?` + `Did the deceased have priors?`, method="class", data=California, control=rpart.control(minsplit=10, cp=0))
 
-Prediction1 <- predict(mytree1, type = "class")
-
-confu_matrix1<-table(Prediction1,California$`Cause of Death`)
-cat("Confusion Matrix:")
-confu_matrix1
-
-accuracy1<-(confu_matrix1[1,1]+confu_matrix1[2,2])/(sum(confu_matrix1))
-cat("Accuracy of the Model:")
-accuracy
-
-fancyRpartPlot(mytree1)
-```
-
-
-Checking Texas
+3.6.2 Checking Texas
 ```{r}
 Texas<-testdata[(testdata$State=="Texas"),]
 summary(Texas)
@@ -408,14 +405,71 @@ mylogit <- glm(`Cause of Death`~ Race + Age + Gender+ `Did the deceased have pri
 summary(mylogit)
 ```
 
+3.7 Checking with clustering
+
+3.7.1 Finding optimum number of clusters. By looking at first plot the bend (knee) is at 5
+But in silhouette it looks like the maximum is at 5.
+In hierarchical clustering we can see that the best will be 4 or 5.
+So we will use 5 or 6 as k.
+```{r}
+library(cluster)
+testdata1<-data.frame(testdata)
+SSE_curve <- c()
+sil_curve <- c()
+for (n in 2:10) {
+  kcluster <- kproto(testdata1[,c(1,3,4,6)], n, lambda = 0.5)
+  sse <- sum(kcluster$withinss)
+  SSE_curve[n-1] <- sse
+  sil <- silhouette(kcluster$cluster, dist(testdata1[,c(1,3,4,6)]))
+  sil_curve[n-1] <- mean(sil[,3])
+}
+
+plot(2:10, SSE_curve, type="b", xlab="Number of Clusters", ylab="SSE")
+plot(2:10, sil_curve, type="b", xlab="Number of Clusters", ylab="silhouette")
+
+#hierarchical clustering
+#install.packages("cluster")
+#library(cluster)
+dist <- daisy(testdata1[,3:7], metric = "gower")
+library(stats)
+hcluster <- hclust(dist, method = "ward.D")
+plot(hcluster, hang = 0, label = F, main = "Cluster Dendrogram")
+```
+
+3.7.2 Interesting trends emerge from clustering. 
+- A black man may get killed by police at the early 20es (Younger black men get killed more)
+- Where as a white men are more vulnerable in above 55 (older white men get more into trouble, bigger group is 60+)
+- Irrespective of age group, all are vulnerable if armed
+- From the box plot, the biggest group is 60s and all other groups are same in size
 
 ```{r}
 library(clustMixType)
-x<- data.frame(testdata$`Cause of Death`,testdata$Age)
-kpres <- kproto(x, 7)
+#x<- data.frame(testdata$Race,testdata$`Was the deceased armed?`, testdata$Age )
+kpres <- kproto(testdata1[,c(1,3,4,6)], 5, lambda = 0.5)
 kpres
-clprofiles(kpres,x)
-#ggplot(kpres$cluster)
-#testdata$cluster = kpres$cluster
+clprofiles(kpres,testdata1)
+
+```
+
+3.7.3 Checking and validating some results with ggplot
+```{r}
+library(ggplot2)
+library(gridExtra)
+#combine clustering result into the original data
+cluster <- as.factor(kpres$cluster)
+testdata1_cluster <- cbind(testdata1,cluster)
+
+#Race vs age group when armed
+ggplot(testdata1_cluster,aes(x=cluster,fill=Race))+geom_bar(position = 'fill')
+#ggplot(customer_data_cluster,aes(x=UflyMemberStatus,fill=age_group))+geom_bar(position = 'stack') + facet_grid(.~cluster)
+
+ggplot(testdata1_cluster, aes(x = Race, fill = Was.the.deceased.armed.)) + geom_bar(position = "fill")+theme(axis.text.x = element_text(angle = 90, vjust = 0, hjust = 1))
+
+
+#ggplot(testdata1_cluster,aes(x=cluster,fill=State))+geom_bar(position = 'fill')
+
+#fit<- lm(Age~testdata$Race+testdata$`Was the deceased armed?`+testdata$Gender, data = testdata1)
+#summary(fit)
+#plot(fit)
 ```
 
